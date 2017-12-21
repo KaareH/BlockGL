@@ -10,10 +10,11 @@ find_package(GLFW3 REQUIRED)
 add_library(GLAD STATIC lib/glad/src/glad.c)
 target_include_directories(GLAD PUBLIC "${CMAKE_SOURCE_DIR}/lib/glad/include")
 
-# GLM
-find_package(GLM REQUIRED)
+# Linmath
+add_library(linmath INTERFACE IMPORTED)
+set_target_properties(linmath PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_SOURCE_DIR}/lib/linmath/include")
 
 set(SOURCE_FILES src/main.c)
 add_executable(BlockGL ${SOURCE_FILES})
 
-target_link_libraries(BlockGL glfw GLAD glm)
+target_link_libraries(BlockGL glfw GLAD linmath)
