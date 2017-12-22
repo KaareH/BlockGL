@@ -14,7 +14,11 @@ target_include_directories(GLAD PUBLIC "${CMAKE_SOURCE_DIR}/lib/glad/include")
 add_library(linmath INTERFACE IMPORTED)
 set_target_properties(linmath PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_SOURCE_DIR}/lib/linmath/include")
 
-set(SOURCE_FILES src/main.c)
+# STB image
+add_library(stb INTERFACE IMPORTED)
+set_target_properties(stb PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_SOURCE_DIR}/lib/stb/include")
+
+set(SOURCE_FILES src/main.c src/blockgl.h)
 add_executable(BlockGL ${SOURCE_FILES})
 
-target_link_libraries(BlockGL glfw GLAD linmath)
+target_link_libraries(BlockGL glfw GLAD linmath stb)
