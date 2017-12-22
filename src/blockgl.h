@@ -214,12 +214,12 @@ void handleCameraInput(struct Camera* cam, GLFWwindow* window, const double DT) 
 	}
 
 	//Limit pitch
-	if (cam->rotation[1] < -90) {
-		cam->rotation[1] = -90;
+	if (cam->rotation[0] < -90) {
+		cam->rotation[0] = -90;
 	}
 
-	if (cam->rotation[1] > 90) {
-		cam->rotation[1] = 90;
+	if (cam->rotation[0] > 90) {
+		cam->rotation[0] = 90;
 	}
 
 	//Handle input
@@ -239,6 +239,49 @@ void handleCameraInput(struct Camera* cam, GLFWwindow* window, const double DT) 
 	cam->position[1] += up * DT * speed;
 
 	cam->position[1] -= down * DT * speed;
+}
+
+void buildShader(GLuint* program, const char* vertSource, const char* fragSource) {
+	// build and compile our shader program
+	// ------------------------------------
+	// vertex shader
+	int vertexShader = glCreateShader(GL_VERTEX_SHADER);
+	glShaderSource(vertexShader, 1, &vertSource, NULL);
+	glCompileShader(vertexShader);
+	// check for shader compile errors
+	int success;
+	char infoLog[512];
+	glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+	if (!success)
+	{
+		glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
+		printf("ERROR::SHADER::VERTEX::COMPILATION_FAILED\n%s\n", infoLog);
+	}
+	// fragment shader
+	int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+	glShaderSource(fragmentShader, 1, &fragSource, NULL);
+	glCompileShader(fragmentShader);
+	// check for shader compile errors
+	glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
+	if (!success)
+	{
+		glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
+		printf("ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n%s\n", infoLog);
+	}
+	// link shaders
+	int shaderProgram = glCreateProgram();
+	*program = shaderProgram;
+	glAttachShader(shaderProgram, vertexShader);
+	glAttachShader(shaderProgram, fragmentShader);
+	glLinkProgram(shaderProgram);
+	// check for linking errors
+	glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+	if (!success) {
+		glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+		printf("ERROR::SHADER::PROGRAM::LINKING_FAILED\n%s\n", infoLog);
+	}
+	glDeleteShader(vertexShader);
+	glDeleteShader(fragmentShader);
 }
 
 void initChunk(struct Chunk* chunk) {
