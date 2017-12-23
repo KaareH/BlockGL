@@ -207,10 +207,9 @@ int main(void) {
 	view_location = glGetUniformLocation(program, "view");
 
 	GLint lightPos_location, lightColor_location, fogColor_location;
-	lightPos_location = glGetAttribLocation(program, "lightPos");
-	lightColor_location = glGetAttribLocation(program, "lightColor");
-	fogColor_location = glGetAttribLocation(program, "fogColor");
-
+	lightPos_location = glGetUniformLocation(program, "lightPos");
+	lightColor_location = glGetUniformLocation(program, "lightColor");
+	fogColor_location = glGetUniformLocation(program, "fogColor");
 
 	/*
 	 * Texture
@@ -218,15 +217,10 @@ int main(void) {
 	int w;
 	int h;
 	int comp;
-	unsigned char* image = stbi_load("stone.png", &w, &h, &comp, STBI_rgb);
+	unsigned char* image = stbi_load("stone.png", &w, &h, &comp, STBI_rgb_alpha);
 
 	if(image == NULL)
 		assert(false);
-
-	if(comp == 3)
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
-	else if(comp == 4)
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
 
 	GLuint texture;
 	GLubyte texels[16 * 16 * 4 * 1];
@@ -238,25 +232,30 @@ int main(void) {
 			texels[tindex + 1] = image[rindex + 1];
 			texels[tindex + 2] = image[rindex + 2];
 			texels[tindex + 3] = image[rindex + 3];
+			/*texels[tindex] = 160;
+			texels[tindex + 1] = 210;
+			texels[tindex + 2] = 128;
+			texels[tindex + 3] = 255;*/
 		}
 	}
 
 	GLsizei width = 16;
 	GLsizei height = 16;
 	GLsizei layerCount = 1;
-	GLsizei mipLevelCount = 4;
+	GLsizei mipLevelCount = 2;
 
 	glGenTextures(1, &texture);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, texture);
 	glTexStorage3D(GL_TEXTURE_2D_ARRAY, mipLevelCount, GL_RGBA8, width, height, layerCount);
 	glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, 0, width, height, layerCount, GL_RGBA, GL_UNSIGNED_BYTE, texels);
 	glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
-	glBindTexture(GL_TEXTURE_2D, 0);
+
 
 	stbi_image_free(image);
 
 	struct World* world = malloc(sizeof(struct World));
 	initWorld(world);
+
 	struct Camera camera;
 
 	double time;
@@ -274,19 +273,23 @@ int main(void) {
 		glfwGetFramebufferSize(window, &width, &height);
 		ratio = width / (float) height;
 		glViewport(0, 0, width, height);
-		glClearColor(0.1f,0.6f,0.9f,1);
+		glClearColor(world->skyColor[0], world->skyColor[1], world->skyColor[2], 1);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		mat4x4 proj, view;
 		mat4x4_identity(view);
 
-		mat4x4_perspective(proj, 45, ratio, 0.1f, 1000.f);
+		mat4x4_perspective(proj, 45, ratio, 0.1f, 10000.f);
 
 		getCameraMatrix(&camera, &view);
 
 		glUseProgram(program);
 		glUniformMatrix4fv(view_location, 1, GL_FALSE, (const GLfloat*) view);
 		glUniformMatrix4fv(projection_location, 1, GL_FALSE, (const GLfloat*) proj);
+
+		glUniform3f(fogColor_location, world->skyColor[0], world->skyColor[1], world->skyColor[2]);
+		glUniform3f(lightColor_location, world->lightColor[0], world->lightColor[1], world->lightColor[2]);
+		glUniform3f(lightPos_location, world->lightPos[0], world->lightPos[1], world->lightPos[2]);
 
 		glBindTexture(GL_TEXTURE_2D_ARRAY, texture);
 

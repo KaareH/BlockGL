@@ -4,7 +4,7 @@
 //BGL for short BlockGL
 // Variable constants
 const unsigned int BGL_ChunkSize = 16;
-const unsigned int BGL_LoadRadius = 10;
+const unsigned int BGL_LoadRadius = 5;
 const float BGL_MouseSensitivity = 0.05f;
 
 // Calculated constants
@@ -27,8 +27,8 @@ static const char* vertex_shader_text =
 				"uniform mat4 view;\n"
 				"uniform mat4 projection;\n"
 				"\n"
-				"const float gradient = 4;\n"
-				"const float density = 0.005;\n"
+				"const float gradient = 20;\n"
+				"const float density = 0.015;\n"
 				"\n"
 				"void main() {\n"
 				"\tvec4 positionRelativeToCam = view * vec4(position, 1.0f);\n"
@@ -44,34 +44,34 @@ static const char* vertex_shader_text =
 
 static const char* fragment_shader_text =
 		"#version 330 core\n"
-		"\n"
-		"in vec3 TexCoord;\n"
-		"in vec3 Normal;\n"
-		"in vec3 FragPos;\n"
-		"in float Visibility;\n"
-		"//in vec3 toCameraVector;\n"
-		"\n"
-		"out vec4 color;\n"
-		"\n"
-		"uniform sampler2DArray textureArray;\n"
-		"uniform vec3 lightPos;\n"
-		"uniform vec3 lightColor;\n"
-		"uniform vec3 fogColor;\n"
-		"\n"
-		"void main() {\n"
-		"    // Ambient\n"
-		"    float ambientStrength = 0.1f;\n"
-		"    vec3 ambient = ambientStrength * lightColor;\n"
-		"  \t\n"
-		"    // Diffuse \n"
-		"    vec3 norm = normalize(Normal);\n"
-		"    vec3 lightDir = normalize(lightPos - FragPos);\n"
-		"    float diff = max(dot(norm, lightDir), 0.0);\n"
-		"    vec3 diffuse = diff * lightColor;\n"
-		"\t\n"
-		"\tcolor = vec4(ambient + diffuse, 1.0) * texture(textureArray, TexCoord);\n"
-		"\tcolor = mix(vec4(fogColor, 1.0), color, Visibility);\t\n"
-		"}";
+				"\n"
+				"in vec3 TexCoord;\n"
+				"in vec3 Normal;\n"
+				"in vec3 FragPos;\n"
+				"in float Visibility;\n"
+				"//in vec3 toCameraVector;\n"
+				"\n"
+				"out vec4 color;\n"
+				"\n"
+				"uniform sampler2DArray textureArray;\n"
+				"uniform vec3 lightPos;\n"
+				"uniform vec3 lightColor;\n"
+				"uniform vec3 fogColor;\n"
+				"\n"
+				"void main() {\n"
+				"    // Ambient\n"
+				"    float ambientStrength = 0.1f;\n"
+				"    vec3 ambient = ambientStrength * lightColor;\n"
+				"  \t\n"
+				"    // Diffuse \n"
+				"    vec3 norm = normalize(Normal);\n"
+				"    vec3 lightDir = normalize(lightPos - FragPos);\n"
+				"    float diff = max(dot(norm, lightDir), 0.0);\n"
+				"    vec3 diffuse = diff * lightColor;\n"
+				"\t\n"
+				"\tcolor = vec4(ambient + diffuse, 1.0) * texture(textureArray, TexCoord);\n"
+				"\tcolor = mix(vec4(fogColor, 1.0), color, Visibility);\t\n"
+				"}";
 
 
 double getDelta(double* t1) {
@@ -131,6 +131,9 @@ struct Chunk {
 
 struct World {
 	struct Chunk chunks[BGL_LoadSize][BGL_LoadSize][BGL_LoadSize];
+	vec3 skyColor;
+	vec3 lightColor;
+	vec3 lightPos;
 };
 
 struct Camera {
@@ -338,7 +341,7 @@ void generateMesh(struct Chunk* chunk) {
 				float gz = (int)BGL_ChunkSize * chunk->position.z + z;
 				const unsigned char id = chunk->blocks[x][y][z].id;
 				if(id == 1) {
-					int textureLayer = 1;
+					int textureLayer = 0;
 					vertices[verticesSize]=(0 + gx);
 					++verticesSize;
 					vertices[verticesSize]=(1 + gy);
@@ -454,6 +457,18 @@ void generateMesh(struct Chunk* chunk) {
 }
 
 void initWorld(struct World* world) {
+	world->skyColor[0] = 0.1f;
+	world->skyColor[1] = 0.6f;
+	world->skyColor[2] = 0.9f;
+
+	world->lightColor[0] = 1.f;
+	world->lightColor[1] = 1.f;
+	world->lightColor[2] = 1.f;
+
+	world->lightPos[0] = 100000.f;
+	world->lightPos[1] = 200000.f;
+	world->lightPos[2] = 100000.f;
+
 	for(int x = 0; x < BGL_LoadSize; x++) {
 		for(int y = 0; y < BGL_LoadSize; y++) {
 			for(int z = 0; z < BGL_LoadSize; z++) {
