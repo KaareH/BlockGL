@@ -4,7 +4,7 @@
 //BGL for short BlockGL
 // Variable constants
 const unsigned int BGL_ChunkSize = 16;
-const unsigned int BGL_LoadRadius = 3;
+const unsigned int BGL_LoadRadius = 10;
 const float BGL_MouseSensitivity = 0.05f;
 
 // Calculated constants
@@ -78,6 +78,7 @@ double getDelta(double* t1) {
 	double t2 = glfwGetTime();
 	double elapsedTime = t2 - *t1;
 	*t1 = t2;
+
 	return elapsedTime;
 }
 
@@ -123,8 +124,9 @@ struct Chunk {
 	struct Block blocks[BGL_ChunkSize][BGL_ChunkSize][BGL_ChunkSize];
 	struct Vec3i position;
 	bool isGenerated;
+	bool noMesh;
 	GLuint VAO, VBO, EBO;
-	GLuint indicesCount;
+	GLuint indicesSize;
 };
 
 struct World {
@@ -165,7 +167,6 @@ void handleCameraInput(struct Camera* cam, GLFWwindow* window, const double DT) 
 
 	cam->rotation[1] += xpos * BGL_MouseSensitivity;
 	cam->rotation[0] += ypos * BGL_MouseSensitivity;
-
 
 	float forward = 0;
 	float backwards = 0;
@@ -332,13 +333,12 @@ void generateMesh(struct Chunk* chunk) {
 	for(int x = 0; x < BGL_ChunkSize; x++) {
 		for (int y = 0; y < BGL_ChunkSize; y++) {
 			for (int z = 0; z < BGL_ChunkSize; z++) {
-				float gx = BGL_ChunkSize * chunk->position.x + x;
-				float gy = BGL_ChunkSize * chunk->position.y + y;
-				float gz = BGL_ChunkSize * chunk->position.z + z;
-				//float gx = x, gy = y, gz = z;
-
+				float gx = (int)BGL_ChunkSize * chunk->position.x + x;
+				float gy = (int)BGL_ChunkSize * chunk->position.y + y;
+				float gz = (int)BGL_ChunkSize * chunk->position.z + z;
 				const unsigned char id = chunk->blocks[x][y][z].id;
 				if(id == 1) {
+					int textureLayer = 1;
 					vertices[verticesSize]=(0 + gx);
 					++verticesSize;
 					vertices[verticesSize]=(1 + gy);
@@ -349,7 +349,7 @@ void generateMesh(struct Chunk* chunk) {
 					++verticesSize;
 					vertices[verticesSize]=(1);
 					++verticesSize;
-					vertices[verticesSize]=(0);//Texture layer
+					vertices[verticesSize]=(textureLayer);//Texture layer
 					++verticesSize;
 					vertices[verticesSize]=(0);
 					++verticesSize;
@@ -368,7 +368,7 @@ void generateMesh(struct Chunk* chunk) {
 					++verticesSize;
 					vertices[verticesSize]=(0);
 					++verticesSize;
-					vertices[verticesSize]=(0);//Texture layer
+					vertices[verticesSize]=(textureLayer);//Texture layer
 					++verticesSize;
 					vertices[verticesSize]=(0);
 					++verticesSize;
@@ -387,7 +387,7 @@ void generateMesh(struct Chunk* chunk) {
 					++verticesSize;
 					vertices[verticesSize]=(0);
 					++verticesSize;
-					vertices[verticesSize]=(0);//Texture layer
+					vertices[verticesSize]=(textureLayer);//Texture layer
 					++verticesSize;
 					vertices[verticesSize]=(0);
 					++verticesSize;
@@ -406,7 +406,7 @@ void generateMesh(struct Chunk* chunk) {
 					++verticesSize;
 					vertices[verticesSize]=(1);
 					++verticesSize;
-					vertices[verticesSize]=(0);//Texture layer
+					vertices[verticesSize]=(textureLayer);//Texture layer
 					++verticesSize;
 					vertices[verticesSize]=(0);
 					++verticesSize;
@@ -433,9 +433,16 @@ void generateMesh(struct Chunk* chunk) {
 		}
 	}
 
-	// Ensure that the expected size ratio is met
-	assert((verticesSize / indicesSize == 6) && (verticesSize % indicesSize == 0));
-	chunk->indicesCount = indicesCount;
+	if(verticesSize > 1) {
+		// Ensure that the expected size ratio is met
+		assert((verticesSize / indicesSize == 6) && (verticesSize % indicesSize == 0));
+		chunk->noMesh = false;
+	}
+	else {
+		assert(verticesSize == 0 && indicesSize == 0 && indicesCount == 0);
+		chunk->noMesh = true;
+	}
+	chunk->indicesSize = indicesSize;
 
 	glBindVertexArray(chunk->VAO);
 
@@ -459,18 +466,21 @@ void initWorld(struct World* world) {
 }
 
 void generateTerrain(struct Chunk* chunk) { // <----------- Possible optimization. Traverse memory block differently
-	//Previous memory should be cleared
+	//Previous memory should be cleareds
 	const struct Vec3i pos = chunk->position;
+	float x1 = (int)BGL_ChunkSize * pos.x;
+	float y1 = (int)BGL_ChunkSize * pos.y;
+	float z1 = (int)BGL_ChunkSize * pos.z;
 	for(int x = 0; x < BGL_ChunkSize; x++) {
 		for(int z = 0; z < BGL_ChunkSize; z++) {
-			float val = cosf(x +  pos.x) * cosf(z + pos.z) * 10;
+			float val = cosf((x + x1)/20.f) * cosf((z + z1)/20.f) * 10 + 20;
 			for(int y = 0; y < BGL_ChunkSize; y++) {
 				unsigned char id;
-				if(val > 5) {
-					id = 0;
+				if(val > y + y1) {
+					id = 1;
 				}
 				else {
-					id = 1;
+					id = 0;
 				}
 				chunk->blocks[x][y][z].id = id;
 			}
@@ -502,7 +512,6 @@ GLFWwindow* initWindow() {
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); //for mac compatibility
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-	glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 	window = glfwCreateWindow(640, 480, "Simple example", NULL, NULL);
 	if (!window)
 	{
