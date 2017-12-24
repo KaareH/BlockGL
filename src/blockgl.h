@@ -384,7 +384,7 @@ void generateMesh(struct Chunk* chunk) {
 	printf("Generating mesh\n");
 	// Create buffers with the maximum necessary size
 	GLfloat vertices[BGL_MaxFaces * 4 * 9]; // 4 corners and 9 attributes for each vertex. xyz texX texY texId normX normY normZ
-	GLuint indices[BGL_MaxFaces * 4]; // 4 indices to make a square face
+	GLuint indices[BGL_MaxFaces * 6]; // 6 indices to make a square face
 	unsigned int verticesSize = 0, indicesSize = 0;
 	unsigned int indicesCount = 0;
 	for(int x = 0; x < BGL_ChunkSize; x++) {
@@ -442,6 +442,10 @@ void generateMesh(struct Chunk* chunk) {
 		}
 	}
 
+	// Ensure that no overflow has occurred.
+	assert(verticesSize <= sizeof(vertices) / sizeof(vertices[0]));
+	assert(indicesSize <= sizeof(indices) / sizeof(indices[0]));
+
 	if(verticesSize > 1) {
 		// Ensure that the expected size ratio is met
 		assert((verticesSize / indicesSize == 6) && (verticesSize % indicesSize == 0));
@@ -487,7 +491,7 @@ void initWorld(struct World* world) {
 }
 
 void generateTerrain(struct Chunk* chunk) { // <----------- Possible optimization. Traverse memory block differently
-	//Previous memory should be cleareds
+	//Previous memory should be cleared
 	const struct Vec3i pos = chunk->position;
 	float x1 = (int)BGL_ChunkSize * pos.x;
 	float y1 = (int)BGL_ChunkSize * pos.y;
