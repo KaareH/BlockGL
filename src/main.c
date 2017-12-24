@@ -52,10 +52,6 @@ int main(void) {
 			texels[tindex + 1] = image[rindex + 1];
 			texels[tindex + 2] = image[rindex + 2];
 			texels[tindex + 3] = image[rindex + 3];
-			/*texels[tindex] = 160;
-			texels[tindex + 1] = 210;
-			texels[tindex + 2] = 128;
-			texels[tindex + 3] = 255;*/
 		}
 	}
 

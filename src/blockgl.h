@@ -4,7 +4,7 @@
 //BGL for short BlockGL
 // Variable constants
 const unsigned int BGL_ChunkSize = 16;
-const unsigned int BGL_LoadRadius = 5;
+const unsigned int BGL_LoadRadius = 2;
 const float BGL_MouseSensitivity = 0.05f;
 
 // Calculated constants
@@ -326,9 +326,63 @@ void deinitChunk(struct Chunk* chunk) {
 	glDeleteBuffers(1, &chunk->EBO);
 }
 
+static const GLfloat cube_vertices[] = {
+		// Front
+		0.5, -0.5, -0.5,
+		0.5,  0.5, -0.5,
+		-0.5, -0.5, -0.5,
+		-0.5,  0.5, -0.5,
+
+		// BACK
+		-0.5, 0.5, 0.5,
+		0.5, 0.5, 0.5,
+		-0.5, -0.5, 0.5,
+		0.5, -0.5, 0.5,
+
+		// RIGHT
+		0.5, 0.5, 0.5,
+		0.5, 0.5, -0.5,
+		0.5, -0.5, 0.5,
+		0.5, -0.5, -0.5,
+
+		// LEFT
+		-0.5, 0.5, -0.5,
+		-0.5, 0.5, 0.5,
+		-0.5, -0.5, -0.5,
+		-0.5, -0.5, 0.5,
+
+		// TOP
+		-0.5, 0.5, -0.5,
+		0.5, 0.5, -0.5,
+		-0.5, 0.5, 0.5,
+		0.5, 0.5, 0.5,
+
+		// BOTTOM
+		0.5, -0.5, -0.5,
+		-0.5, -0.5, -0.5,
+		0.5, -0.5, 0.5,
+		-0.5, -0.5, 0.5,
+};
+
+static const GLfloat cube_texture[] = {
+		0,0,
+		1,0,
+		0,1,
+		1,1,
+};
+
+static const GLfloat cube_normals[] = {
+		0, 0, 1,
+		0, 0, -1,
+		1, 0, 0,
+		-1, 0, 0,
+		0, 1, 0,
+		0, -1, 0,
+};
+
 void generateMesh(struct Chunk* chunk) {
-	// Create buffers with the maximum necessary size
 	printf("Generating mesh\n");
+	// Create buffers with the maximum necessary size
 	GLfloat vertices[BGL_MaxFaces * 4 * 9]; // 4 corners and 9 attributes for each vertex. xyz texX texY texId normX normY normZ
 	GLuint indices[BGL_MaxFaces * 4]; // 4 indices to make a square face
 	unsigned int verticesSize = 0, indicesSize = 0;
@@ -342,95 +396,47 @@ void generateMesh(struct Chunk* chunk) {
 				const unsigned char id = chunk->blocks[x][y][z].id;
 				if(id == 1) {
 					int textureLayer = 0;
-					vertices[verticesSize]=(0 + gx);
-					++verticesSize;
-					vertices[verticesSize]=(1 + gy);
-					++verticesSize;
-					vertices[verticesSize]=(0 + gz);
-					++verticesSize;
-					vertices[verticesSize]=(0);
-					++verticesSize;
-					vertices[verticesSize]=(1);
-					++verticesSize;
-					vertices[verticesSize]=(textureLayer);//Texture layer
-					++verticesSize;
-					vertices[verticesSize]=(0);
-					++verticesSize;
-					vertices[verticesSize]=(1);
-					++verticesSize;
-					vertices[verticesSize]=(0);
-					++verticesSize;
+					for(int i = 0; i < 6; i++) {
+						for(int j = 0; j < 4; j++) {
+							int posIndex = j * 3 + i * 12;
+							vertices[verticesSize]=(cube_vertices[0 + posIndex] + gx);
+							++verticesSize;
+							vertices[verticesSize]=(cube_vertices[1 + posIndex] + gy);
+							++verticesSize;
+							vertices[verticesSize]=(cube_vertices[2 + posIndex] + gz);
+							++verticesSize;
 
-					vertices[verticesSize]=(1 + gx);
-					++verticesSize;
-					vertices[verticesSize]=(1 + gy);
-					++verticesSize;
-					vertices[verticesSize]=(1 + gz);
-					++verticesSize;
-					vertices[verticesSize]=(1);
-					++verticesSize;
-					vertices[verticesSize]=(0);
-					++verticesSize;
-					vertices[verticesSize]=(textureLayer);//Texture layer
-					++verticesSize;
-					vertices[verticesSize]=(0);
-					++verticesSize;
-					vertices[verticesSize]=(1);
-					++verticesSize;
-					vertices[verticesSize]=(0);
-					++verticesSize;
+							int textureIndex = j * 2;
+							vertices[verticesSize]=cube_texture[0 + textureIndex];
+							++verticesSize;
+							vertices[verticesSize]=cube_texture[1 + textureIndex];
+							++verticesSize;
+							vertices[verticesSize]=(textureLayer);//Texture layer
+							++verticesSize;
 
-					vertices[verticesSize]=(0 + gx);
-					++verticesSize;
-					vertices[verticesSize]=(1 + gy);
-					++verticesSize;
-					vertices[verticesSize]=(1 + gz);
-					++verticesSize;
-					vertices[verticesSize]=(0);
-					++verticesSize;
-					vertices[verticesSize]=(0);
-					++verticesSize;
-					vertices[verticesSize]=(textureLayer);//Texture layer
-					++verticesSize;
-					vertices[verticesSize]=(0);
-					++verticesSize;
-					vertices[verticesSize]=(1);
-					++verticesSize;
-					vertices[verticesSize]=(0);
-					++verticesSize;
+							int normalIndex = i * 3;
+							vertices[verticesSize]=cube_normals[0 + normalIndex];
+							++verticesSize;
+							vertices[verticesSize]=cube_normals[1 + normalIndex];
+							++verticesSize;
+							vertices[verticesSize]=cube_normals[2 + normalIndex];
+							++verticesSize;
+						}
 
-					vertices[verticesSize]=(1 + gx);
-					++verticesSize;
-					vertices[verticesSize]=(1 + gy);
-					++verticesSize;
-					vertices[verticesSize]=(0 + gz);
-					++verticesSize;
-					vertices[verticesSize]=(1);
-					++verticesSize;
-					vertices[verticesSize]=(1);
-					++verticesSize;
-					vertices[verticesSize]=(textureLayer);//Texture layer
-					++verticesSize;
-					vertices[verticesSize]=(0);
-					++verticesSize;
-					vertices[verticesSize]=(1);
-					++verticesSize;
-					vertices[verticesSize]=(0);
-					++verticesSize;
-
-					indices[indicesSize]=(2 + indicesCount);
-					++indicesSize;
-					indices[indicesSize]=(1 + indicesCount);
-					++indicesSize;
-					indices[indicesSize]=(0 + indicesCount);
-					++indicesSize;
-					indices[indicesSize]=(1 + indicesCount);
-					++indicesSize;
-					indices[indicesSize]=(3 + indicesCount);
-					++indicesSize;
-					indices[indicesSize]=(0 + indicesCount);
-					++indicesSize;
-					indicesCount += 4;
+						indices[indicesSize]=(2 + indicesCount);
+						++indicesSize;
+						indices[indicesSize]=(1 + indicesCount);
+						++indicesSize;
+						indices[indicesSize]=(0 + indicesCount);
+						++indicesSize;
+						indices[indicesSize]=(2 + indicesCount);
+						++indicesSize;
+						indices[indicesSize]=(3 + indicesCount);
+						++indicesSize;
+						indices[indicesSize]=(1 + indicesCount);
+						++indicesSize;
+						indicesCount += 4;
+					}
 				}
 			}
 		}
