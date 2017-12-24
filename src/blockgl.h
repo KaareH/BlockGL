@@ -4,7 +4,7 @@
 //BGL for short BlockGL
 // Variable constants
 const unsigned int BGL_ChunkSize = 16;
-const unsigned int BGL_LoadRadius = 2;
+const unsigned int BGL_LoadRadius = 4;
 const float BGL_MouseSensitivity = 0.05f;
 
 // Calculated constants
@@ -327,18 +327,6 @@ void deinitChunk(struct Chunk* chunk) {
 }
 
 static const GLfloat cube_vertices[] = {
-		// Front
-		0.5, -0.5, -0.5,
-		0.5,  0.5, -0.5,
-		-0.5, -0.5, -0.5,
-		-0.5,  0.5, -0.5,
-
-		// BACK
-		-0.5, 0.5, 0.5,
-		0.5, 0.5, 0.5,
-		-0.5, -0.5, 0.5,
-		0.5, -0.5, 0.5,
-
 		// RIGHT
 		0.5, 0.5, 0.5,
 		0.5, 0.5, -0.5,
@@ -362,6 +350,18 @@ static const GLfloat cube_vertices[] = {
 		-0.5, -0.5, -0.5,
 		0.5, -0.5, 0.5,
 		-0.5, -0.5, 0.5,
+
+		// Front
+		-0.5, 0.5, 0.5,
+		0.5, 0.5, 0.5,
+		-0.5, -0.5, 0.5,
+		0.5, -0.5, 0.5,
+
+		// BACK
+		0.5, -0.5, -0.5,
+		0.5,  0.5, -0.5,
+		-0.5, -0.5, -0.5,
+		-0.5,  0.5, -0.5,
 };
 
 static const GLfloat cube_texture[] = {
@@ -372,21 +372,33 @@ static const GLfloat cube_texture[] = {
 };
 
 static const GLfloat cube_normals[] = {
-		0, 0, 1,
-		0, 0, -1,
 		1, 0, 0,
 		-1, 0, 0,
 		0, 1, 0,
 		0, -1, 0,
+		0, 0, 1,
+		0, 0, -1,
 };
 
+// Returns false if the neighbour doesn't exist within the chunk.
+bool checkNeighbour(struct Chunk* chunk, unsigned char* id, int x, int y, int z) {
+	if(x >= 0 && x < BGL_ChunkSize && y >= 0 && y < BGL_ChunkSize && z >= 0 && z < BGL_ChunkSize) {
+		*id = chunk->blocks[x][y][z].id;
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+
 void generateMesh(struct Chunk* chunk) {
-	printf("Generating mesh\n");
+	//printf("Generating mesh\n");
 	// Create buffers with the maximum necessary size
 	GLfloat vertices[BGL_MaxFaces * 4 * 9]; // 4 corners and 9 attributes for each vertex. xyz texX texY texId normX normY normZ
 	GLuint indices[BGL_MaxFaces * 6]; // 6 indices to make a square face
 	unsigned int verticesSize = 0, indicesSize = 0;
 	unsigned int indicesCount = 0;
+
 	for(int x = 0; x < BGL_ChunkSize; x++) {
 		for (int y = 0; y < BGL_ChunkSize; y++) {
 			for (int z = 0; z < BGL_ChunkSize; z++) {
@@ -397,45 +409,50 @@ void generateMesh(struct Chunk* chunk) {
 				if(id == 1) {
 					int textureLayer = 0;
 					for(int i = 0; i < 6; i++) {
-						for(int j = 0; j < 4; j++) {
-							int posIndex = j * 3 + i * 12;
-							vertices[verticesSize]=(cube_vertices[0 + posIndex] + gx);
-							++verticesSize;
-							vertices[verticesSize]=(cube_vertices[1 + posIndex] + gy);
-							++verticesSize;
-							vertices[verticesSize]=(cube_vertices[2 + posIndex] + gz);
-							++verticesSize;
+						int normalIndex = i * 3;
+						unsigned char neighbour = 0;
+						bool outOfBounds = !checkNeighbour(chunk, &neighbour, x + cube_normals[0 + normalIndex], y + cube_normals[1 + normalIndex], z + cube_normals[2 + normalIndex]);
 
-							int textureIndex = j * 2;
-							vertices[verticesSize]=cube_texture[0 + textureIndex];
-							++verticesSize;
-							vertices[verticesSize]=cube_texture[1 + textureIndex];
-							++verticesSize;
-							vertices[verticesSize]=(textureLayer);//Texture layer
-							++verticesSize;
+						if (neighbour == 0 || outOfBounds) {
+							for (int j = 0; j < 4; j++) {
+								int posIndex = j * 3 + i * 12;
+								vertices[verticesSize] = (cube_vertices[0 + posIndex] + gx);
+								++verticesSize;
+								vertices[verticesSize] = (cube_vertices[1 + posIndex] + gy);
+								++verticesSize;
+								vertices[verticesSize] = (cube_vertices[2 + posIndex] + gz);
+								++verticesSize;
 
-							int normalIndex = i * 3;
-							vertices[verticesSize]=cube_normals[0 + normalIndex];
-							++verticesSize;
-							vertices[verticesSize]=cube_normals[1 + normalIndex];
-							++verticesSize;
-							vertices[verticesSize]=cube_normals[2 + normalIndex];
-							++verticesSize;
+								int textureIndex = j * 2;
+								vertices[verticesSize] = cube_texture[0 + textureIndex];
+								++verticesSize;
+								vertices[verticesSize] = cube_texture[1 + textureIndex];
+								++verticesSize;
+								vertices[verticesSize] = (textureLayer);//Texture layer
+								++verticesSize;
+
+								vertices[verticesSize] = cube_normals[0 + normalIndex];
+								++verticesSize;
+								vertices[verticesSize] = cube_normals[1 + normalIndex];
+								++verticesSize;
+								vertices[verticesSize] = cube_normals[2 + normalIndex];
+								++verticesSize;
+							}
+
+							indices[indicesSize] = (2 + indicesCount);
+							++indicesSize;
+							indices[indicesSize] = (1 + indicesCount);
+							++indicesSize;
+							indices[indicesSize] = (0 + indicesCount);
+							++indicesSize;
+							indices[indicesSize] = (2 + indicesCount);
+							++indicesSize;
+							indices[indicesSize] = (3 + indicesCount);
+							++indicesSize;
+							indices[indicesSize] = (1 + indicesCount);
+							++indicesSize;
+							indicesCount += 4;
 						}
-
-						indices[indicesSize]=(2 + indicesCount);
-						++indicesSize;
-						indices[indicesSize]=(1 + indicesCount);
-						++indicesSize;
-						indices[indicesSize]=(0 + indicesCount);
-						++indicesSize;
-						indices[indicesSize]=(2 + indicesCount);
-						++indicesSize;
-						indices[indicesSize]=(3 + indicesCount);
-						++indicesSize;
-						indices[indicesSize]=(1 + indicesCount);
-						++indicesSize;
-						indicesCount += 4;
 					}
 				}
 			}
