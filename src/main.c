@@ -148,6 +148,7 @@ int main(void) {
 		glfwPollEvents();
 	}
 
+	free(world);
 	glfwDestroyWindow(window);
 	glfwTerminate();
 	exit(EXIT_SUCCESS);
