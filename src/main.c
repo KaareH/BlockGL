@@ -54,6 +54,14 @@ int main(void) {
 	insertTexture(texels, dirt_tex, 3);
 	stbi_image_free(dirt_tex);
 
+	unsigned char* sand_tex = stbi_load("sand.png", &w, &h, &comp, STBI_rgb_alpha);
+	insertTexture(texels, sand_tex, 4);
+	stbi_image_free(sand_tex);
+
+	unsigned char* water_tex = stbi_load("water.png", &w, &h, &comp, STBI_rgb_alpha);
+	insertTexture(texels, water_tex, 5);
+	stbi_image_free(water_tex);
+
 	// Air has id 0
 	// Stone block
 	defineBlockTexture(block_textureIds, 1, 0, 0, 0, 0, 0, 0);
@@ -63,6 +71,12 @@ int main(void) {
 
 	// Dirt block
 	defineBlockTexture(block_textureIds, 3, 3, 3, 3, 3, 3, 3);
+
+	// Sand block
+	defineBlockTexture(block_textureIds, 4, 4, 4, 4, 4, 4, 4);
+
+	// Water block
+	defineBlockTexture(block_textureIds, 5, 5, 5, 5, 5, 5, 5);
 
 	GLuint texture;
 	GLsizei mipLevelCount = 2;

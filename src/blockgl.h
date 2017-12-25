@@ -10,8 +10,8 @@ const unsigned int		BGL_ChunkSize			= 16;
 const unsigned int		BGL_LoadRadius			= 6;
 const float				BGL_MouseSensitivity	= 0.05f;
 const unsigned int		BGL_TextureSize			= 16;
-const unsigned int		BGL_BlockCount			= 4;
-const unsigned int		BGL_TextureCount		= 4;
+const unsigned int		BGL_BlockCount			= 6; // Air counts for one
+const unsigned int		BGL_TextureCount		= 6;
 
 // Calculated constants
 const unsigned int BGL_LoadSize = BGL_LoadRadius * 2 + 1;
@@ -564,17 +564,34 @@ void generatePerlinTerrain(struct Chunk* chunk) { // <----------- Possible optim
 	float z1 = (int)BGL_ChunkSize * pos.z;
 	for(int x = 0; x < BGL_ChunkSize; x++) {
 		for(int z = 0; z < BGL_ChunkSize; z++) {
-			float val = stb_perlin_turbulence_noise3((x1 + x) / 100.f, 0, (z1 + z) / 100.f, 2.f, 0.5f, 6, 0, 0, 0);
+			float val = stb_perlin_turbulence_noise3((x1 + x) / 100.f, 0, (z1 + z) / 100.f, 1.3f, 0.8f, 6, 0, 0, 0);
 			for(int y = 0; y < BGL_ChunkSize; y++) {
-				unsigned char id;
-				if(val * 50 > y1 + y) {
+				int y2 = y1 + y;
+				unsigned char id = 0;
+				int disToTop = val * 40 - y2 - 20;
+				if (disToTop <= 0) {
+					if(y2 <= 0) {
+						id = 5;
+					}
+					else {
+						id = 0;
+					}
+				} else if (disToTop <= 1) {
+					if(y2 <= 2) {
+						id = 4;
+					}
+					else {
+						id = 2;
+					}
+				} else if (disToTop <= 2) {
+					if(y2 <= 2) {
+						id = 4;
+					}
+					else {
+						id = 3;
+					}
+				} else {
 					id = 1;
-				}
-					else if(val * 51 > y1 + y) {
-					id = 2;
-				}
-				else {
-					id = 0;
 				}
 				chunk->blocks[x][y][z].id = id;
 			}
