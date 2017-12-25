@@ -38,27 +38,27 @@ int main(void) {
 	int w;
 	int h;
 	int comp;
-	unsigned char* stone_tex = stbi_load("stone.png", &w, &h, &comp, STBI_rgb_alpha);
+	unsigned char* stone_tex = stbi_load("resources/stone.png", &w, &h, &comp, STBI_rgb_alpha);
 	insertTexture(texels, stone_tex, 0);
 	stbi_image_free(stone_tex);
 
-	unsigned char* grass_top_tex = stbi_load("grass_top.png", &w, &h, &comp, STBI_rgb_alpha);
+	unsigned char* grass_top_tex = stbi_load("resources/grass_top.png", &w, &h, &comp, STBI_rgb_alpha);
 	insertTexture(texels, grass_top_tex, 1);
 	stbi_image_free(grass_top_tex);
 
-	unsigned char* grass_side_tex = stbi_load("grass_side.png", &w, &h, &comp, STBI_rgb_alpha);
+	unsigned char* grass_side_tex = stbi_load("resources/grass_side.png", &w, &h, &comp, STBI_rgb_alpha);
 	insertTexture(texels, grass_side_tex, 2);
 	stbi_image_free(grass_side_tex);
 
-	unsigned char* dirt_tex = stbi_load("dirt.png", &w, &h, &comp, STBI_rgb_alpha);
+	unsigned char* dirt_tex = stbi_load("resources/dirt.png", &w, &h, &comp, STBI_rgb_alpha);
 	insertTexture(texels, dirt_tex, 3);
 	stbi_image_free(dirt_tex);
 
-	unsigned char* sand_tex = stbi_load("sand.png", &w, &h, &comp, STBI_rgb_alpha);
+	unsigned char* sand_tex = stbi_load("resources/sand.png", &w, &h, &comp, STBI_rgb_alpha);
 	insertTexture(texels, sand_tex, 4);
 	stbi_image_free(sand_tex);
 
-	unsigned char* water_tex = stbi_load("water.png", &w, &h, &comp, STBI_rgb_alpha);
+	unsigned char* water_tex = stbi_load("resources/water.png", &w, &h, &comp, STBI_rgb_alpha);
 	insertTexture(texels, water_tex, 5);
 	stbi_image_free(water_tex);
 

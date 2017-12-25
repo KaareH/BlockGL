@@ -22,3 +22,5 @@ set(SOURCE_FILES src/main.c src/blockgl.h)
 add_executable(BlockGL ${SOURCE_FILES})
 
 target_link_libraries(BlockGL glfw GLAD linmath stb)
+
+file(COPY "${PROJECT_SOURCE_DIR}/resources" DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
