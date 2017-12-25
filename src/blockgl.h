@@ -66,7 +66,7 @@ static const char* fragment_shader_text =
 				"\n"
 				"void main() {\n"
 				"    // Ambient\n"
-				"    float ambientStrength = 0.1f;\n"
+				"    float ambientStrength = 0.2f;\n"
 				"    vec3 ambient = ambientStrength * lightColor;\n"
 				"  \t\n"
 				"    // Diffuse \n"

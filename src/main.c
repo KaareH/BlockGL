@@ -42,9 +42,9 @@ int main(void) {
 	insertTexture(texels, stone_tex, 0);
 	stbi_image_free(stone_tex);
 
-	unsigned char* grass_tex = stbi_load("grass.png", &w, &h, &comp, STBI_rgb_alpha);
-	insertTexture(texels, grass_tex, 1);
-	stbi_image_free(grass_tex);
+	unsigned char* grass_top_tex = stbi_load("grass_top.png", &w, &h, &comp, STBI_rgb_alpha);
+	insertTexture(texels, grass_top_tex, 1);
+	stbi_image_free(grass_top_tex);
 
 	unsigned char* grass_side_tex = stbi_load("grass_side.png", &w, &h, &comp, STBI_rgb_alpha);
 	insertTexture(texels, grass_side_tex, 2);
@@ -111,6 +111,8 @@ int main(void) {
 		glUniform3f(lightPos_location, world->lightPos[0], world->lightPos[1], world->lightPos[2]);
 
 		glBindTexture(GL_TEXTURE_2D_ARRAY, texture);
+		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_CULL_FACE);
