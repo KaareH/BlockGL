@@ -34,40 +34,43 @@ int main(void) {
 	/*
 	 * Texture
 	 */
+	GLubyte texels[BGL_TextureSize * BGL_TextureSize * 4 * BGL_TextureCount];
 	int w;
 	int h;
 	int comp;
-	unsigned char* image = stbi_load("stone.png", &w, &h, &comp, STBI_rgb_alpha);
+	unsigned char* stone_tex = stbi_load("stone.png", &w, &h, &comp, STBI_rgb_alpha);
+	insertTexture(texels, stone_tex, 0);
+	stbi_image_free(stone_tex);
 
-	if(image == NULL)
-		assert(false);
+	unsigned char* grass_tex = stbi_load("grass.png", &w, &h, &comp, STBI_rgb_alpha);
+	insertTexture(texels, grass_tex, 1);
+	stbi_image_free(grass_tex);
+
+	unsigned char* grass_side_tex = stbi_load("grass_side.png", &w, &h, &comp, STBI_rgb_alpha);
+	insertTexture(texels, grass_side_tex, 2);
+	stbi_image_free(grass_side_tex);
+
+	unsigned char* dirt_tex = stbi_load("dirt.png", &w, &h, &comp, STBI_rgb_alpha);
+	insertTexture(texels, dirt_tex, 3);
+	stbi_image_free(dirt_tex);
+
+	// Air has id 0
+	// Stone block
+	defineBlockTexture(block_textureIds, 1, 0, 0, 0, 0, 0, 0);
+
+	// Grass block
+	defineBlockTexture(block_textureIds, 2, 2, 2, 1, 3, 2, 2);
+
+	// Dirt block
+	defineBlockTexture(block_textureIds, 3, 3, 3, 3, 3, 3, 3);
 
 	GLuint texture;
-	GLubyte texels[16 * 16 * 4 * 1];
-	for (int x = 0; x < 16; x++) {
-		for (int y = 0; y < 16; y++) {
-			int tindex = ((x + (y * 16)) * 4);// + (1024 * 1024 * 4 * 0);
-			int rindex = ((x + (y * 16)) * 4);
-			texels[tindex] = image[rindex];
-			texels[tindex + 1] = image[rindex + 1];
-			texels[tindex + 2] = image[rindex + 2];
-			texels[tindex + 3] = image[rindex + 3];
-		}
-	}
-
-	GLsizei width = 16;
-	GLsizei height = 16;
-	GLsizei layerCount = 1;
 	GLsizei mipLevelCount = 2;
-
 	glGenTextures(1, &texture);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, texture);
-	glTexStorage3D(GL_TEXTURE_2D_ARRAY, mipLevelCount, GL_RGBA8, width, height, layerCount);
-	glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, 0, width, height, layerCount, GL_RGBA, GL_UNSIGNED_BYTE, texels);
+	glTexStorage3D(GL_TEXTURE_2D_ARRAY, mipLevelCount, GL_RGBA8, BGL_TextureSize, BGL_TextureSize, BGL_TextureCount);
+	glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, 0, BGL_TextureSize, BGL_TextureSize, BGL_TextureCount, GL_RGBA, GL_UNSIGNED_BYTE, texels);
 	glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
-
-
-	stbi_image_free(image);
 
 	struct World* world = malloc(sizeof(struct World));
 	initWorld(world);
@@ -124,7 +127,7 @@ int main(void) {
 					if(!chunk->isGenerated || memcmp(&chunkPos, &chunk->position, sizeof(struct Vec3i)) != 0) { // If the positions are not equal
 						chunk->position = chunkPos;
 						chunk->isGenerated = true;
-						generateTerrain(chunk);
+						generatePerlinTerrain(chunk);
 						generateMesh(chunk);
 						//printf("Generated at: %i, %i, %i\n", x, y, z);
 						//printf("Mempos at: %i, %i, %i\n", memPos.x, memPos.y, memPos.z);

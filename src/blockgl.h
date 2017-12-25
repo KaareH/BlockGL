@@ -1,11 +1,17 @@
 #ifndef BLOCKGL_H
 #define BLOCKGL_H
 
+#define STB_PERLIN_IMPLEMENTATION
+#include <stb_perlin.h>
+
 //BGL for short BlockGL
 // Variable constants
-const unsigned int BGL_ChunkSize = 16;
-const unsigned int BGL_LoadRadius = 4;
-const float BGL_MouseSensitivity = 0.05f;
+const unsigned int		BGL_ChunkSize			= 16;
+const unsigned int		BGL_LoadRadius			= 6;
+const float				BGL_MouseSensitivity	= 0.05f;
+const unsigned int		BGL_TextureSize			= 16;
+const unsigned int		BGL_BlockCount			= 4;
+const unsigned int		BGL_TextureCount		= 4;
 
 // Calculated constants
 const unsigned int BGL_LoadSize = BGL_LoadRadius * 2 + 1;
@@ -28,7 +34,7 @@ static const char* vertex_shader_text =
 				"uniform mat4 projection;\n"
 				"\n"
 				"const float gradient = 20;\n"
-				"const float density = 0.015;\n"
+				"const float density = 0.011;\n"
 				"\n"
 				"void main() {\n"
 				"\tvec4 positionRelativeToCam = view * vec4(position, 1.0f);\n"
@@ -73,6 +79,18 @@ static const char* fragment_shader_text =
 				"\tcolor = mix(vec4(fogColor, 1.0), color, Visibility);\t\n"
 				"}";
 
+void insertTexture(GLubyte* texture_array, GLubyte* texture, unsigned int index) {
+	for (int x = 0; x < BGL_TextureSize; x++) {
+		for (int y = 0; y < BGL_TextureSize; y++) {
+			int rindex = ((x + (y * BGL_TextureSize)) * 4);
+			int tindex = rindex + (BGL_TextureSize * BGL_TextureSize * 4 * index);
+			texture_array[tindex + 0] = texture[rindex + 0];
+			texture_array[tindex + 1] = texture[rindex + 1];
+			texture_array[tindex + 2] = texture[rindex + 2];
+			texture_array[tindex + 3] = texture[rindex + 3];
+		}
+	}
+}
 
 double getDelta(double* t1) {
 	double t2 = glfwGetTime();
@@ -298,10 +316,8 @@ void initChunk(struct Chunk* chunk) {
 	glBindVertexArray(VAO);
 
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	//glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(GLfloat), vertices.data(), GL_STATIC_DRAW);
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	//glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), indices.data(), GL_STATIC_DRAW);
 
 	//Position attribute
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(GLfloat), (GLvoid*)0);
@@ -380,6 +396,17 @@ static const GLfloat cube_normals[] = {
 		0, 0, -1,
 };
 
+void defineBlockTexture(GLuint array[BGL_BlockCount][6], GLuint id, GLuint right, GLuint left, GLuint top, GLuint bottom, GLuint front, GLuint back) {
+	array[id][0] = right;
+	array[id][1] = left;
+	array[id][2] = top;
+	array[id][3] = bottom;
+	array[id][4] = front;
+	array[id][5] = back;
+}
+
+static GLuint block_textureIds[BGL_BlockCount][6];
+
 // Returns false if the neighbour doesn't exist within the chunk.
 bool checkNeighbour(struct Chunk* chunk, unsigned char* id, int x, int y, int z) {
 	if(x >= 0 && x < BGL_ChunkSize && y >= 0 && y < BGL_ChunkSize && z >= 0 && z < BGL_ChunkSize) {
@@ -406,8 +433,7 @@ void generateMesh(struct Chunk* chunk) {
 				float gy = (int)BGL_ChunkSize * chunk->position.y + y;
 				float gz = (int)BGL_ChunkSize * chunk->position.z + z;
 				const unsigned char id = chunk->blocks[x][y][z].id;
-				if(id == 1) {
-					int textureLayer = 0;
+				if(id > 0) {
 					for(int i = 0; i < 6; i++) {
 						int normalIndex = i * 3;
 						unsigned char neighbour = 0;
@@ -416,11 +442,11 @@ void generateMesh(struct Chunk* chunk) {
 						if (neighbour == 0 || outOfBounds) {
 							for (int j = 0; j < 4; j++) {
 								int posIndex = j * 3 + i * 12;
-								vertices[verticesSize] = (cube_vertices[0 + posIndex] + gx);
+								vertices[verticesSize] = cube_vertices[0 + posIndex] + gx;
 								++verticesSize;
-								vertices[verticesSize] = (cube_vertices[1 + posIndex] + gy);
+								vertices[verticesSize] = cube_vertices[1 + posIndex] + gy;
 								++verticesSize;
-								vertices[verticesSize] = (cube_vertices[2 + posIndex] + gz);
+								vertices[verticesSize] = cube_vertices[2 + posIndex] + gz;
 								++verticesSize;
 
 								int textureIndex = j * 2;
@@ -428,7 +454,7 @@ void generateMesh(struct Chunk* chunk) {
 								++verticesSize;
 								vertices[verticesSize] = cube_texture[1 + textureIndex];
 								++verticesSize;
-								vertices[verticesSize] = (textureLayer);//Texture layer
+								vertices[verticesSize] = block_textureIds[id][i];
 								++verticesSize;
 
 								vertices[verticesSize] = cube_normals[0 + normalIndex];
@@ -507,7 +533,7 @@ void initWorld(struct World* world) {
 	}
 }
 
-void generateTerrain(struct Chunk* chunk) { // <----------- Possible optimization. Traverse memory block differently
+void generateCosineTerrain(struct Chunk* chunk) { // <----------- Possible optimization. Traverse memory block differently
 	//Previous memory should be cleared
 	const struct Vec3i pos = chunk->position;
 	float x1 = (int)BGL_ChunkSize * pos.x;
@@ -520,6 +546,32 @@ void generateTerrain(struct Chunk* chunk) { // <----------- Possible optimizatio
 				unsigned char id;
 				if(val > y + y1) {
 					id = 1;
+				}
+				else {
+					id = 0;
+				}
+				chunk->blocks[x][y][z].id = id;
+			}
+		}
+	}
+}
+
+void generatePerlinTerrain(struct Chunk* chunk) { // <----------- Possible optimization. Traverse memory block differently
+	//Previous memory should be cleared
+	const struct Vec3i pos = chunk->position;
+	float x1 = (int)BGL_ChunkSize * pos.x;
+	float y1 = (int)BGL_ChunkSize * pos.y;
+	float z1 = (int)BGL_ChunkSize * pos.z;
+	for(int x = 0; x < BGL_ChunkSize; x++) {
+		for(int z = 0; z < BGL_ChunkSize; z++) {
+			float val = stb_perlin_turbulence_noise3((x1 + x) / 100.f, 0, (z1 + z) / 100.f, 2.f, 0.5f, 6, 0, 0, 0);
+			for(int y = 0; y < BGL_ChunkSize; y++) {
+				unsigned char id;
+				if(val * 50 > y1 + y) {
+					id = 1;
+				}
+					else if(val * 51 > y1 + y) {
+					id = 2;
 				}
 				else {
 					id = 0;
