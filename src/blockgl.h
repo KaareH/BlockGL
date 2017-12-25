@@ -374,10 +374,10 @@ static const GLfloat cube_vertices[] = {
 		0.5, -0.5, 0.5,
 
 		// BACK
-		0.5, -0.5, -0.5,
 		0.5,  0.5, -0.5,
-		-0.5, -0.5, -0.5,
 		-0.5,  0.5, -0.5,
+		0.5, -0.5, -0.5,
+		-0.5, -0.5, -0.5,
 };
 
 static const GLfloat cube_texture[] = {
