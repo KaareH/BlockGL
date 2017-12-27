@@ -133,21 +133,40 @@ int main(void) {
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 		struct Vec3i chp = toChunkPos(camera.position); //Camera chunk position
-		for(int x = chp.x - BGL_LoadRadius; x <= chp.x + (int)BGL_LoadRadius; x++) {
-			for(int y = chp.y - BGL_LoadRadius; y <= chp.y + (int)BGL_LoadRadius; y++) {
-				for(int z = chp.z - BGL_LoadRadius; z <= chp.z + (int)BGL_LoadRadius; z++) {
+		for(int x = chp.x - (int)BGL_LoadRadius; x <= chp.x + (int)BGL_LoadRadius; x++) {
+			for(int y = chp.y - (int)BGL_LoadRadius; y <= chp.y + (int)BGL_LoadRadius; y++) {
+				for(int z = chp.z - (int)BGL_LoadRadius; z <= chp.z + (int)BGL_LoadRadius; z++) {
 					struct Vec3i chunkPos;
 					set(&chunkPos, x, y, z);
 					struct Vec3i memPos = toMemoryPos(chunkPos);
 					struct Chunk* chunk = &world->chunks[memPos.x][memPos.y][memPos.z];
+
 					if(!chunk->isGenerated || memcmp(&chunkPos, &chunk->position, sizeof(struct Vec3i)) != 0) { // If the positions are not equal
 						chunk->position = chunkPos;
 						chunk->isGenerated = true;
+						chunk->isMeshUpToDate = false;
 						generatePerlinTerrain(chunk);
-						generateMesh(chunk);
 						//printf("Generated at: %i, %i, %i\n", x, y, z);
 						//printf("Mempos at: %i, %i, %i\n", memPos.x, memPos.y, memPos.z);
 					}
+				}
+			}
+		}
+
+		// Loop through chunks in a range 1 less than the generated terrain
+		for(int x = chp.x - (int) BGL_LoadRadius + 1; x < chp.x + (int) BGL_LoadRadius; x++) {
+			for (int y = chp.y - (int) BGL_LoadRadius + 1; y < chp.y + (int) BGL_LoadRadius; y++) {
+				for (int z = chp.z - (int) BGL_LoadRadius + 1; z < chp.z + (int) BGL_LoadRadius; z++) {
+					struct Vec3i chunkPos;
+					set(&chunkPos, x, y, z);
+					struct Vec3i memPos = toMemoryPos(chunkPos);
+					struct Chunk* chunk = &world->chunks[memPos.x][memPos.y][memPos.z];
+
+					if(!chunk->isMeshUpToDate) {
+						generateMesh(world, chunk);
+						chunk->isMeshUpToDate = true;
+					}
+
 					if(!chunk->noMesh) {
 						//printf("Drawing: %i, %i, %i. Indices: %i\n", x, y, z, chunk->indicesSize);
 						glBindVertexArray(chunk->VAO);

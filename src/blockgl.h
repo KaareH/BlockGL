@@ -7,7 +7,7 @@
 //BGL for short BlockGL
 // Variable constants
 const unsigned int		BGL_ChunkSize			= 16;
-const unsigned int		BGL_LoadRadius			= 6;
+const unsigned int		BGL_LoadRadius			= 7;
 const float				BGL_MouseSensitivity	= 0.05f;
 const unsigned int		BGL_TextureSize			= 16;
 const unsigned int		BGL_BlockCount			= 6; // Air counts for one
@@ -142,6 +142,7 @@ struct Chunk {
 	struct Block blocks[BGL_ChunkSize][BGL_ChunkSize][BGL_ChunkSize];
 	struct Vec3i position;
 	bool isGenerated;
+	bool isMeshUpToDate;
 	bool noMesh;
 	GLuint VAO, VBO, EBO;
 	GLuint indicesSize;
@@ -407,18 +408,17 @@ void defineBlockTexture(GLuint array[BGL_BlockCount][6], GLuint id, GLuint right
 
 static GLuint block_textureIds[BGL_BlockCount][6];
 
-// Returns false if the neighbour doesn't exist within the chunk.
-bool checkNeighbour(struct Chunk* chunk, unsigned char* id, int x, int y, int z) {
-	if(x >= 0 && x < BGL_ChunkSize && y >= 0 && y < BGL_ChunkSize && z >= 0 && z < BGL_ChunkSize) {
-		*id = chunk->blocks[x][y][z].id;
-		return true;
-	}
-	else {
-		return false;
-	}
+void checkBlock(struct World* world, unsigned char* id, int gx, int gy, int gz) {
+	vec3 globalPos = {gx, gy, gz};
+	struct Vec3i chunkPos = toChunkPos(globalPos);
+	struct Vec3i memPos = toMemoryPos(chunkPos);
+	int x1 = gx - chunkPos.x * BGL_ChunkSize;
+	int y1 = gy - chunkPos.y * BGL_ChunkSize;
+	int z1 = gz - chunkPos.z * BGL_ChunkSize;
+	*id = world->chunks[memPos.x][memPos.y][memPos.z].blocks[x1][y1][z1].id;
 }
 
-void generateMesh(struct Chunk* chunk) {
+void generateMesh(struct World* world, struct Chunk* chunk) {
 	//printf("Generating mesh\n");
 	// Create buffers with the maximum necessary size
 	GLfloat vertices[BGL_MaxFaces * 4 * 9]; // 4 corners and 9 attributes for each vertex. xyz texX texY texId normX normY normZ
@@ -437,9 +437,15 @@ void generateMesh(struct Chunk* chunk) {
 					for(int i = 0; i < 6; i++) {
 						int normalIndex = i * 3;
 						unsigned char neighbour = 0;
-						bool outOfBounds = !checkNeighbour(chunk, &neighbour, x + cube_normals[0 + normalIndex], y + cube_normals[1 + normalIndex], z + cube_normals[2 + normalIndex]);
+						struct Vec3i checkPos = { x + cube_normals[0 + normalIndex], y + cube_normals[1 + normalIndex], z + cube_normals[2 + normalIndex]};
+						if(checkPos.x >= 0 && checkPos.x < BGL_ChunkSize && checkPos.y >= 0 && checkPos.y < BGL_ChunkSize && checkPos.z >= 0 && checkPos.z < BGL_ChunkSize) {
+							neighbour = chunk->blocks[checkPos.x][checkPos.y][checkPos.z].id;
+						}
+						else {
+							checkBlock(world, &neighbour, gx + cube_normals[0 + normalIndex], gy + cube_normals[1 + normalIndex], gz + cube_normals[2 + normalIndex]);
+						}
 
-						if (neighbour == 0 || outOfBounds) {
+						if (neighbour == 0) {
 							for (int j = 0; j < 4; j++) {
 								int posIndex = j * 3 + i * 12;
 								vertices[verticesSize] = cube_vertices[0 + posIndex] + gx;
