@@ -90,6 +90,13 @@ int main(void) {
 	initWorld(world);
 
 	struct Camera camera;
+	camera.position[0] = 0;
+	camera.position[1] = 10;
+	camera.position[2] = 0;
+
+	camera.rotation[0] = 0;
+	camera.rotation[1] = 0;
+	camera.rotation[2] = 0;
 
 	double time;
 	initTime(&time);
