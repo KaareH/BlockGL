@@ -55,6 +55,8 @@ dkms.conf
 .DS_Store
 
 # Directories
+build
+cmake-build
 cmake-build-debug
 cmake-build-release
 cmake-build-relwithdebinfo

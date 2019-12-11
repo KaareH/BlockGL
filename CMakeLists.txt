@@ -4,7 +4,7 @@ project(BlockGL)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Werror")
 
 # GLFW
-find_package(GLFW3 REQUIRED)
+find_package(glfw3 REQUIRED)
 
 # GLAD
 add_library(GLAD STATIC lib/glad/src/glad.c)

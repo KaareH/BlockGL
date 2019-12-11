@@ -4,6 +4,7 @@
 #define STB_PERLIN_IMPLEMENTATION
 #include <stb_perlin.h>
 
+/*
 //BGL for short BlockGL
 // Variable constants
 const unsigned int		BGL_ChunkSize			= 16;
@@ -17,6 +18,19 @@ const unsigned int		BGL_TextureCount		= 6;
 const unsigned int BGL_LoadSize = BGL_LoadRadius * 2 + 1;
 //const unsigned int BGL_MaxFaces = (BGL_ChunkSize * BGL_ChunkSize * BGL_ChunkSize + 1) / 2; //Max number of possible faces in a chunk
 const unsigned int BGL_MaxFaces = (BGL_ChunkSize * BGL_ChunkSize * BGL_ChunkSize) * 6; //Max number of possible faces in a chunk // <----- Temporary
+*/
+
+#define		BGL_ChunkSize					16
+#define		BGL_LoadRadius				7
+#define		BGL_MouseSensitivity	0.05f
+#define		BGL_TextureSize				16
+#define		BGL_BlockCount				6 // Air counts for one
+#define		BGL_TextureCount		 	6
+
+// Calculated constants
+#define BGL_LoadSize BGL_LoadRadius * 2 + 1
+//const unsigned int BGL_MaxFaces = (BGL_ChunkSize * BGL_ChunkSize * BGL_ChunkSize + 1) / 2; //Max number of possible faces in a chunk
+#define BGL_MaxFaces (BGL_ChunkSize * BGL_ChunkSize * BGL_ChunkSize) * 6 //Max number of possible faces in a chunk // <----- Temporary
 
 static const char* vertex_shader_text =
 		"#version 330 core\n"
@@ -177,6 +191,8 @@ void getCameraMatrix(struct Camera* camera, mat4x4* mat) {
 }
 
 void handleCameraInput(struct Camera* cam, GLFWwindow* window, const double DT) {
+	if(glfwGetInputMode(window, GLFW_CURSOR) != GLFW_CURSOR_DISABLED) return;
+
 	//Mouse
 	double xpos, ypos;
 	double xpos1, ypos1;
@@ -605,19 +621,55 @@ void generatePerlinTerrain(struct Chunk* chunk) { // <----------- Possible optim
 	}
 }
 
+void toggleFullscreen(GLFWwindow* window) {
+	if(glfwGetWindowMonitor(window)) {
+		glfwSetWindowMonitor(window, NULL, 320, 240, 640, 480, 0);
+	} else {
+		GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+		const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+		glfwSetWindowMonitor(window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
+	}
+}
+
+void toggleCursor(GLFWwindow* window) {
+	if(glfwGetInputMode(window, GLFW_CURSOR) == GLFW_CURSOR_NORMAL)
+		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	else
+		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+}
+
 static void error_callback(int error, const char* description) {
 	fprintf(stderr, "Error: %s\n", description);
 }
 
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+	printf("Key press: %i\n",key);
+	if (key == GLFW_KEY_Q && action == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, GLFW_TRUE);
+
+	if (key == GLFW_KEY_F && action == GLFW_PRESS)
+		toggleFullscreen(window);
+
+	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+		toggleCursor(window);
 }
 
 void initMessage() {
-	printf("Chunk size: %i\n", BGL_ChunkSize);
-	printf("Loading radius: %i\n", BGL_LoadRadius);
-	printf("Max faces per chunk: %i\n", BGL_MaxFaces);
+	printf("Welcome to BlockGL!\n"
+				"\n"
+				"Controls:\n"
+				" - Move with WASD and cursor movement. Use shift to descent and the space bar to ascent.\n"
+				" - Holding left ctrl will speed up the movement.\n"
+				" - Use Q to quit the application.\n"
+				" - Use F to toggle fullscreen.\n"
+				" - Use Esc to toggle cursor mode.\n"
+				"\n"
+				"Properties:\n"
+				);
+	printf(" - Chunk size: %i\n", BGL_ChunkSize);
+	printf(" - Loading radius: %i\n", BGL_LoadRadius);
+	printf(" - Max faces per chunk: %i\n", BGL_MaxFaces);
+	printf("\n");
 }
 
 GLFWwindow* initWindow() {
@@ -629,7 +681,7 @@ GLFWwindow* initWindow() {
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); //for mac compatibility
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-	window = glfwCreateWindow(640, 480, "Simple example", NULL, NULL);
+	window = glfwCreateWindow(640, 480, "BlockGL", NULL, NULL);
 	if (!window)
 	{
 		glfwTerminate();
